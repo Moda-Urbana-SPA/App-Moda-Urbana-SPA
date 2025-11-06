@@ -6,17 +6,14 @@ data class UserDto(
     @SerializedName("id")
     val id: Int,
 
-    @SerializedName("username")
-    val username: String,
-
     @SerializedName("email")
     val email: String,
 
-    @SerializedName("firstName")
-    val firstName: String,
+    @SerializedName("name")
+    val name: String? = null,
 
-    @SerializedName("lastName")
-    val lastName: String,
+    @SerializedName("created_at")
+    val createdAt: Long? = null,
 
     @SerializedName("image")
     val image: String? = null

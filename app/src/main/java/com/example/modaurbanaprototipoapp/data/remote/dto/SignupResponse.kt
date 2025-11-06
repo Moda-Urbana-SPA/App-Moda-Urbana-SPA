@@ -2,19 +2,19 @@ package com.example.modaurbanaprototipoapp.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
 
-data class LoginResponse(
+data class SignupResponse(
     @SerializedName("authToken")
     val authToken: String,
 
     @SerializedName("id")
-    val id: Int? = null,
+    val id: Int,
 
     @SerializedName("email")
-    val email: String? = null,
+    val email: String,
 
     @SerializedName("name")
-    val name: String? = null,
+    val name: String,
 
     @SerializedName("created_at")
-    val createdAt: Long? = null
+    val createdAt: Long
 )

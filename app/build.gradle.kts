@@ -2,13 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "2.0.21-1.0.25"
 }
 
 android {
     namespace = "com.example.modaurbanaprototipoapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.modaurbanaprototipoapp"
@@ -58,30 +57,30 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // ========================================
-    // NETWORKING - API REST
-    // ========================================
+    // ROOM DATABASE - Base de datos local
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
 
-    // OkHttp - Cliente HTTP
+    // NETWORKING - API REST
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // Retrofit - Cliente REST
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
-    // Coroutines (si no las tienes)
+    // COROUTINES & LIFECYCLE
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.compose.runtime:runtime:1.6.0")
 
-    // DataStore - Para guardar tokens
+    // STORAGE
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // Coil - Para cargar imágenes desde URLs (opcional)
+    // UI & NAVIGATION
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // ✅ ViewModel Compose (CRÍTICO)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-
-    // ✅ Runtime (para collectAsState)
-    implementation("androidx.compose.runtime:runtime:1.6.0")
+    implementation("androidx.compose.ui:ui:1.6.0")
 }
