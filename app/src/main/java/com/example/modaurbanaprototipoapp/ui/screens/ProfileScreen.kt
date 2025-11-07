@@ -1,121 +1,205 @@
 package com.example.modaurbanaprototipoapp.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.modaurbanaprototipoapp.viewmodel.ProfileViewModel
+import com.example.modaurbanaprototipoapp.viewmodel.ProfileUiState
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    userId: Int,                          // ✅ añadido
+    onNavigateBack: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
-    // Observar el estado
     val state by viewModel.uiState.collectAsState()
 
-    // Cargar datos cuando la pantalla se abre
-    LaunchedEffect(Unit) {
-        viewModel.loadUser(1)  // ⚠️ Cambia el ID según necesites
+    LaunchedEffect(userId) {
+        viewModel.loadCurrentUserProfile()
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        when {
-            // Estado: Cargando
-            state.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            // Estado: Error
-            state.error != null -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "❌ Error",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = state.error ?: "",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadUser(1) }) {
-                        Text("Reintentar")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Perfil de Usuario") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // ✅ actualizado
+                            contentDescription = "Volver"
+                        )
                     }
                 }
-            }
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when {
+                state.isLoading -> {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                }
 
-            // Estado: Datos cargados
-            else -> {
-                Column(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "ModaUrbanaSPA",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Nombre
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
+                state.error != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Nombre",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = state.userName,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                        Text(
+                            text = "❌ Error",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = state.error ?: "",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { viewModel.loadCurrentUserProfile() }) {
+                            Text("Reintentar")
                         }
                     }
+                }
 
-                    // Email
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Email",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = state.userEmail,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(onClick = { viewModel.loadUser(1) }) {
-                        Text("Refrescar")
-                    }
+                state.user != null -> {
+                    ProfileContent(state = state, onRefresh = { viewModel.loadCurrentUserProfile() })
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ProfileContent(
+    state: ProfileUiState,
+    onRefresh: () -> Unit
+) {
+    val user = state.user ?: return
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (!user.image.isNullOrEmpty()) {
+            AsyncImage(
+                model = user.image,
+                contentDescription = "Avatar de ${user.name}",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Surface(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.padding(32.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = user.name ?: "Usuario",
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        Text(
+            text = user.email,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        Card(Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Email, contentDescription = "Email", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("Email", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(user.email, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+
+                HorizontalDivider() // ✅ actualizado
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, contentDescription = "ID", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("ID de Usuario", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(user.id.toString(), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+
+                if (user.createdAt != null) {
+                    HorizontalDivider() // ✅ actualizado
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Person, contentDescription = "Registro", tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Miembro desde", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatDate(user.createdAt), style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
+            Text("Refrescar Datos")
+        }
+    }
+}
+
+private fun formatDate(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
