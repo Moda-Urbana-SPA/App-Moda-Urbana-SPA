@@ -83,4 +83,11 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.compose.ui:ui:1.6.0")
+
+    // Coil - Para cargar imágenes desde URI
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Accompanist Permissions
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
 }
