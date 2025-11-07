@@ -36,12 +36,7 @@ fun LoginScreen(
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Verificar sesión al iniciar
-    LaunchedEffect(Unit) {
-        viewModel.checkSession()
-    }
-
-    // Navegar a home cuando el login sea exitoso
+    LaunchedEffect(Unit) { viewModel.checkSession() }
     LaunchedEffect(state.isLoginSuccessful) {
         if (state.isLoginSuccessful) {
             onLoginSuccess()
@@ -50,11 +45,7 @@ fun LoginScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Iniciar Sesión") }
-            )
-        }
+        topBar = { TopAppBar(title = { Text("Moda Urbana SPA") }) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -65,135 +56,78 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo o título
+            Text("Moda Urbana", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = "Bienvenido",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Ingresa tus credenciales para continuar",
+                "Estilo que define",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+            Spacer(Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Campo: Email
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
-                },
+                label = { Text("Correo Electrónico") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
                 isError = state.emailError != null,
                 supportingText = state.emailError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Campo: Contraseña
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
                 label = { Text("Contraseña") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Contraseña")
-                },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Contraseña") },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
-                        )
+                        Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
                     }
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 isError = state.passwordError != null,
                 supportingText = state.passwordError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        viewModel.login()
-                    }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus(); viewModel.login()
+                }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Mensaje de error
             if (state.error != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = state.error!!,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+                ) { Text(state.error!!, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(16.dp)) }
+                Spacer(Modifier.height(16.dp))
             }
 
-            // Botón de login
             Button(
                 onClick = { viewModel.login() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !state.isLoading
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Iniciar Sesión")
-                }
+                if (state.isLoading) CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                else Text("Iniciar Sesión")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Enlace para ir a registro
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "¿No tienes cuenta?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                TextButton(onClick = onNavigateToRegister) {
-                    Text("Regístrate")
-                }
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text("¿No tienes cuenta?", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(4.dp))
+                TextButton(onClick = onNavigateToRegister) { Text("Regístrate") }
             }
         }
     }

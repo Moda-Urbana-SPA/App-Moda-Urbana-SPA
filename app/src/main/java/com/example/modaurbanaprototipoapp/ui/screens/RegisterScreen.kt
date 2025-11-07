@@ -38,7 +38,6 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    // Navegar a login cuando el registro sea exitoso
     LaunchedEffect(state.isRegistrationSuccessful) {
         if (state.isRegistrationSuccessful) {
             onRegisterSuccess()
@@ -47,11 +46,7 @@ fun RegisterScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Crear Cuenta") }
-            )
-        }
+        topBar = { TopAppBar(title = { Text("Moda Urbana SPA") }) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -62,192 +57,116 @@ fun RegisterScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Título
+            Text("Crea tu cuenta", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = "Registro",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Crea tu cuenta para continuar",
+                "A un paso de algo grande!",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+            Spacer(Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Campo: Email
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Email") },
-                leadingIcon = {
-                    Icon(Icons.Default.Email, contentDescription = "Email")
-                },
+                label = { Text("Correo Electrónico") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
                 isError = state.emailError != null,
                 supportingText = state.emailError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Campo: Nombre
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { viewModel.onNameChange(it) },
                 label = { Text("Nombre") },
-                leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = "Nombre")
-                },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Nombre") },
                 isError = state.nameError != null,
                 supportingText = state.nameError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Campo: Contraseña
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
                 label = { Text("Contraseña") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Contraseña")
-                },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Contraseña") },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
-                        )
+                        Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
                     }
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 isError = state.passwordError != null,
                 supportingText = state.passwordError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Campo: Confirmar Contraseña
             OutlinedTextField(
                 value = state.confirmPassword,
                 onValueChange = { viewModel.onConfirmPasswordChange(it) },
                 label = { Text("Confirmar Contraseña") },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = "Confirmar")
-                },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirmar") },
                 trailingIcon = {
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(
-                            imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (confirmPasswordVisible) "Ocultar" else "Mostrar"
-                        )
+                        Icon(if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
                     }
                 },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 isError = state.confirmPasswordError != null,
                 supportingText = state.confirmPasswordError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        viewModel.register()
-                    }
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus(); viewModel.register()
+                }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Mensaje de error
             if (state.error != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = state.error!!,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+                ) { Text(state.error!!, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(16.dp)) }
+                Spacer(Modifier.height(16.dp))
             }
 
-            // Botón de registro
             Button(
                 onClick = { viewModel.register() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !state.isLoading
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Registrarse")
-                }
+                if (state.isLoading) CircularProgressIndicator(Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                else Text("Registrarse")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Enlace para ir a login
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "¿Ya tienes cuenta?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                TextButton(onClick = onNavigateToLogin) {
-                    Text("Inicia Sesión")
-                }
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text("¿Ya tienes cuenta?", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(4.dp))
+                TextButton(onClick = onNavigateToLogin) { Text("Inicia Sesión") }
             }
         }
     }

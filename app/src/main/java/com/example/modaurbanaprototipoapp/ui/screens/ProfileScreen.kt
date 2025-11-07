@@ -26,26 +26,22 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userId: Int,                          // ✅ añadido
+    userId: Int,
     onNavigateBack: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(userId) {
-        viewModel.loadCurrentUserProfile()
-    }
+    LaunchedEffect(userId) { viewModel.loadCurrentUserProfile() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Usuario") },
+                title = { Text("Moda Urbana SPA") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // ✅ actualizado
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -60,7 +56,6 @@ fun ProfileScreen(
                 state.isLoading -> {
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
-
                 state.error != null -> {
                     Column(
                         modifier = Modifier
@@ -68,26 +63,15 @@ fun ProfileScreen(
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "❌ Error",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Text("Error", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = state.error ?: "",
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        Text(state.error ?: "", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadCurrentUserProfile() }) {
-                            Text("Reintentar")
-                        }
+                        Button(onClick = { viewModel.loadCurrentUserProfile() }) { Text("Reintentar") }
                     }
                 }
-
                 state.user != null -> {
-                    ProfileContent(state = state, onRefresh = { viewModel.loadCurrentUserProfile() })
+                    ProfileContent(state = state, onLogout = onLogout)
                 }
             }
         }
@@ -97,7 +81,7 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     state: ProfileUiState,
-    onRefresh: () -> Unit
+    onLogout: () -> Unit
 ) {
     val user = state.user ?: return
 
@@ -112,61 +96,38 @@ private fun ProfileContent(
             AsyncImage(
                 model = user.image,
                 contentDescription = "Avatar de ${user.name}",
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape),
+                modifier = Modifier.size(120.dp).clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
         } else {
             Surface(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape),
+                modifier = Modifier.size(120.dp).clip(CircleShape),
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.padding(32.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.padding(32.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        Text(
-            text = user.name ?: "Usuario",
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-
+        Text(text = user.name ?: "Usuario", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = user.email,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
+        Text(text = user.email, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
 
         Spacer(Modifier.height(24.dp))
 
         Card(Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Email, contentDescription = "Email", tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Email", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Correo Electrónico", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(user.email, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
 
-                HorizontalDivider() // ✅ actualizado
+                HorizontalDivider()
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, contentDescription = "ID", tint = MaterialTheme.colorScheme.primary)
@@ -178,7 +139,7 @@ private fun ProfileContent(
                 }
 
                 if (user.createdAt != null) {
-                    HorizontalDivider() // ✅ actualizado
+                    HorizontalDivider()
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Person, contentDescription = "Registro", tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
@@ -193,8 +154,8 @@ private fun ProfileContent(
 
         Spacer(Modifier.height(24.dp))
 
-        Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-            Text("Refrescar Datos")
+        Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
+            Text("Cerrar sesión")
         }
     }
 }

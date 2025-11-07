@@ -1,6 +1,5 @@
 package com.example.modaurbanaprototipoapp.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,35 +8,61 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = White,
+    onPrimary = Black,
+    primaryContainer = DarkGrey,
+    onPrimaryContainer = White,
+
+    secondary = LightGrey,
+    onSecondary = Black,
+
+    tertiary = Grey,
+    onTertiary = White,
+
+    background = Black,
+    onBackground = White,
+    surface = DarkGrey,
+    onSurface = White,
+    surfaceVariant = Grey,
+    onSurfaceVariant = OffWhite,
+
+    error = Color(0xFFCF6679),
+    errorContainer = Color(0xFF4E0000),
+    onErrorContainer = White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = Black,
+    onPrimary = White,
+    primaryContainer = OffWhite,
+    onPrimaryContainer = Black,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = Grey,
+    onSecondary = White,
+
+    tertiary = LightGrey,
+    onTertiary = Black,
+
+    background = White,
+    onBackground = Black,
+    surface = White,
+    onSurface = Black,
+    surfaceVariant = OffWhite,
+    onSurfaceVariant = Grey,
+
+    error = Color(0xFFB3261E),
+    errorContainer = Color(0xFFFFDAD4),
+    onErrorContainer = Black
 )
 
 @Composable
 fun ModaUrbanaPrototipoAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -45,7 +70,6 @@ fun ModaUrbanaPrototipoAppTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

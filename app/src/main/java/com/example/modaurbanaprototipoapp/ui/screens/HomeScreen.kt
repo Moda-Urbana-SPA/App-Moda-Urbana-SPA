@@ -37,39 +37,20 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
-    // Navegar a login cuando se cierre sesión
     LaunchedEffect(state.isLoggedOut) {
-        if (state.isLoggedOut) {
-            onLogout()
-        }
+        if (state.isLoggedOut) onLogout()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Moda Urbana",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Estilo para la ciudad",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                },
+                title = { Text("Moda Urbana SPA", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                 actions = {
-                    // Botón Ver Perfil (reemplaza al de Refrescar)
                     IconButton(onClick = { onNavigateToProfile(1) }) {
                         Icon(Icons.Default.Person, contentDescription = "Ver Perfil")
                     }
                     IconButton(onClick = { /* TODO: Carrito */ }) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito")
-                    }
-                    IconButton(onClick = { viewModel.logout() }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -83,7 +64,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Barra de búsqueda
             SearchBar(
                 query = searchQuery,
                 onQueryChange = {
@@ -93,23 +73,17 @@ fun HomeScreen(
                 modifier = Modifier.padding(16.dp)
             )
 
-            // Filtros por categoría
             CategoryFilters(
                 selectedCategory = state.selectedCategory,
                 onCategorySelected = { viewModel.filterByCategory(it) }
             )
 
-            // Mensaje de error
             if (state.error != null) {
                 ErrorCard(error = state.error!!)
             }
 
-            // Grid de productos
             if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else if (state.filteredItems.isEmpty()) {
@@ -134,10 +108,8 @@ private fun SearchBar(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text("Buscar prendas...") },
-        leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = "Buscar")
-        },
+        placeholder = { Text("Buscar") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
@@ -197,10 +169,7 @@ private fun ClothingGrid(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(items) { item ->
-            ClothingCard(
-                item = item,
-                onClick = { onItemClick(item) }
-            )
+            ClothingCard(item = item, onClick = { onItemClick(item) })
         }
     }
 }
@@ -217,7 +186,6 @@ private fun ClothingCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Imagen
             AsyncImage(
                 model = item.imageUrl,
                 contentDescription = item.name,
@@ -227,24 +195,18 @@ private fun ClothingCard(
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                 contentScale = ContentScale.Crop
             )
-
-            // Información
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Categoría
                 Text(
                     text = item.category.uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-
                 Spacer(modifier = Modifier.height(4.dp))
-
-                // Nombre
                 Text(
                     text = item.name,
                     style = MaterialTheme.typography.titleSmall,
@@ -253,25 +215,18 @@ private fun ClothingCard(
                     overflow = TextOverflow.Ellipsis,
                     minLines = 2
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
-
-                // Precio
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = formatPrice(item.price),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    // Badge de stock
+                    Text(
+                        text = formatPrice(item.price),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                     if (item.stock < 5) {
                         AssistChip(
                             onClick = { },
@@ -306,11 +261,7 @@ private fun ErrorCard(error: String) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error
-            )
+            Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = error,
@@ -323,38 +274,16 @@ private fun ErrorCard(error: String) {
 
 @Composable
 private fun EmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Icon(
-                Icons.Default.ShoppingCart,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+            Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "No se encontraron productos",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Intenta con otra búsqueda",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text("No se encontraron productos", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Intenta con otra búsqueda", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-/**
- * Formatea el precio en CLP
- */
 private fun formatPrice(price: Int): String {
     val formatter = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
     return formatter.format(price)
