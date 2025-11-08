@@ -2,7 +2,7 @@
 
 ## 1. Caso elegido y alcance
 
-- **Caso:** Tienda de Moda Urbana — catálogo de prendas, carrito y perfil de usuario.
+- **Caso:** Tienda de Moda Urbana — Inicio de Sesión, registro de usuario, catálogo de prendas visual (home) y perfil de usuario.
 - **Alcance EP3:** Diseño/UI, validaciones (a implementar por el alumno), navegación y backstack, gestión de estado, persistencia local (CRUD con Room), recursos nativos (cámara/galería), manejo de avatar y consumo de la API de autenticación.
 
 **Resumen de objetivos**
