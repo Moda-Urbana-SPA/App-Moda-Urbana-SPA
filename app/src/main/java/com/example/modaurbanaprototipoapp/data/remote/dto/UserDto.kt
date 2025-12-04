@@ -3,18 +3,27 @@ package com.example.modaurbanaprototipoapp.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 data class UserDto(
-    @SerializedName("id")
-    val id: Int,
+    @SerializedName("_id")
+    val id: String,
 
     @SerializedName("email")
     val email: String,
 
-    @SerializedName("name")
-    val name: String? = null,
+    @SerializedName("role")
+    val role: String,
 
-    @SerializedName("created_at")
-    val createdAt: Long? = null,
+    @SerializedName("avatar")
+    val avatar: String? = null,
 
-    @SerializedName("image")
-    val image: String? = null
+    @SerializedName("isActive")
+    val isActive: Boolean? = null,
+
+    @SerializedName("emailVerified")
+    val emailVerified: Boolean? = null,
+
+    @SerializedName("createdAt")
+    val createdAt: String? = null,
+
+    @SerializedName("updatedAt")
+    val updatedAt: String? = null
 )

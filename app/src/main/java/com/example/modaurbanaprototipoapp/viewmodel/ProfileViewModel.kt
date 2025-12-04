@@ -9,6 +9,7 @@ import com.example.modaurbanaprototipoapp.repository.AvatarRepository
 import com.example.modaurbanaprototipoapp.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 data class ProfileUiState(
@@ -28,7 +29,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     val uiState: StateFlow<ProfileUiState> = _uiState
 
     init {
-        loadSavedAvatar() // Cargar avatar guardado al iniciar
+        loadSavedAvatar()
     }
 
     private fun loadSavedAvatar() {
@@ -44,29 +45,31 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             try {
-                val result: Result<UserDto> = userRepository.getCurrentUser()
+                val result = userRepository.getCurrentUser()
 
-                result.fold(
-                    onSuccess = { user: UserDto ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            user = user,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception: Throwable ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = when {
-                                exception.message?.contains("401") == true ->
-                                    "Sesión expirada. Por favor inicia sesión nuevamente"
-                                exception.message?.contains("Unable to resolve host") == true ->
-                                    "Sin conexión a internet"
-                                else -> exception.localizedMessage ?: "Error al cargar perfil"
-                            }
-                        )
-                    }
-                )
+                if (result.isSuccess) {
+                    val user = result.getOrThrow()
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        user = user,
+                        error = null
+                    )
+                } else {
+                    val exception = result.exceptionOrNull()
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = when {
+                            exception?.message?.contains("401") == true ->
+                                "Sesión expirada. Por favor inicia sesión nuevamente"
+                            exception?.message?.contains("Unable to resolve host") == true ->
+                                "Sin conexión a internet"
+                            else ->
+                                exception?.localizedMessage ?: "Error al cargar perfil"
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -83,17 +86,13 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     fun updateAvatar(uri: Uri?) {
         viewModelScope.launch {
             avatarRepository.saveAvatarUri(uri)
-            // El estado se actualiza automáticamente vía Flow en loadSavedAvatar()
         }
     }
 
     fun clearAvatar() {
         viewModelScope.launch {
-            avatarRepository.clearAvatar()
+            avatarRepository.clearAvatarUri()
+            _uiState.value = _uiState.value.copy(avatarUri = null)
         }
-    }
-
-    private fun AvatarRepository.clearAvatar() {
-        TODO("Not yet implemented")
     }
 }

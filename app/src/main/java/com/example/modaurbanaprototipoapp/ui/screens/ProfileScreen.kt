@@ -47,7 +47,9 @@ fun ProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(userId) { viewModel.loadCurrentUserProfile() }
+    LaunchedEffect(userId) {
+        viewModel.loadCurrentUserProfile()
+    }
 
     Scaffold(
         topBar = {
@@ -55,7 +57,10 @@ fun ProfileScreen(
                 title = { Text("Moda Urbana SPA") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
                     }
                 }
             )
@@ -70,6 +75,7 @@ fun ProfileScreen(
                 state.isLoading -> {
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
+
                 state.error != null -> {
                     Column(
                         modifier = Modifier
@@ -77,15 +83,30 @@ fun ProfileScreen(
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Error", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            "Error",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
                         Spacer(Modifier.height(8.dp))
-                        Text(state.error ?: "", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            state.error ?: "",
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.error
+                        )
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadCurrentUserProfile() }) { Text("Reintentar") }
+                        Button(onClick = { viewModel.loadCurrentUserProfile() }) {
+                            Text("Reintentar")
+                        }
                     }
                 }
+
                 state.user != null -> {
-                    ProfileContent(state = state, onLogout = onLogout, viewModel = viewModel)
+                    ProfileContent(
+                        state = state,
+                        onLogout = onLogout,
+                        viewModel = viewModel
+                    )
                 }
             }
         }
@@ -103,6 +124,11 @@ private fun ProfileContent(
     val context = LocalContext.current
     var showImagePicker by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Nombre “bonito” derivado del email (porque UserDto no tiene name)
+    val displayName = remember(user.email) {
+        user.email.substringBefore("@").ifBlank { "Usuario" }
+    }
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(
@@ -129,9 +155,7 @@ private fun ProfileContent(
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            viewModel.updateAvatar(it)
-        }
+        uri?.let { viewModel.updateAvatar(it) }
     }
 
     if (showImagePicker) {
@@ -151,14 +175,16 @@ private fun ProfileContent(
             },
             onGalleryClick = {
                 showImagePicker = false
-                val imagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Manifest.permission.READ_MEDIA_IMAGES
-                } else {
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                }
+
+                val imagePermission =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Manifest.permission.READ_MEDIA_IMAGES
+                    } else {
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
 
                 if (permissionsState.permissions.any {
-                        it.permission == imagePermission && it.status.isGranted  //
+                        it.permission == imagePermission && it.status.isGranted
                     }) {
                     pickImageLauncher.launch("image/*")
                 } else {
@@ -179,40 +205,49 @@ private fun ProfileContent(
             modifier = Modifier.size(120.dp),
             contentAlignment = Alignment.BottomEnd
         ) {
-            if (state.avatarUri != null) {
-                AsyncImage(
-                    model = state.avatarUri,
-                    contentDescription = "Avatar del usuario",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .clickable { showImagePicker = true },
-                    contentScale = ContentScale.Crop
-                )
-            } else if (!user.image.isNullOrEmpty()) {
-                AsyncImage(
-                    model = user.image,
-                    contentDescription = "Avatar de ${user.name}",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .clickable { showImagePicker = true },
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { showImagePicker = true },
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Seleccionar avatar",
-                        modifier = Modifier.padding(32.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+            when {
+                // 1) Avatar guardado localmente (uri)
+                state.avatarUri != null -> {
+                    AsyncImage(
+                        model = state.avatarUri,
+                        contentDescription = "Avatar del usuario",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable { showImagePicker = true },
+                        contentScale = ContentScale.Crop
                     )
+                }
+
+                // 2) Avatar remoto desde la API (UserDto.avatar)
+                !user.avatar.isNullOrEmpty() -> {
+                    AsyncImage(
+                        model = user.avatar,
+                        contentDescription = "Avatar de $displayName",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable { showImagePicker = true },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // 3) Placeholder
+                else -> {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { showImagePicker = true },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Seleccionar avatar",
+                            modifier = Modifier.padding(32.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
 
@@ -235,19 +270,39 @@ private fun ProfileContent(
 
         Spacer(Modifier.height(16.dp))
 
-        Text(text = user.name ?: "Usuario", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(4.dp))
-        Text(text = user.email, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
+        Text(
+            text = user.email,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
 
         Spacer(Modifier.height(24.dp))
 
         Card(Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Email, contentDescription = "Email", tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = "Email",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Correo Electrónico", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Correo Electrónico",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Text(user.email, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
@@ -255,22 +310,41 @@ private fun ProfileContent(
                 HorizontalDivider()
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Person, contentDescription = "ID", tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "ID",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("ID de Usuario", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(user.id.toString(), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "ID de Usuario",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(user.id, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
 
-                if (user.createdAt != null) {
+                if (!user.createdAt.isNullOrBlank()) {
                     HorizontalDivider()
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = "Registro", tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Registro",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Miembro desde", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(formatDate(user.createdAt), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "Miembro desde",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                formatDate(user.createdAt),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
                 }
@@ -279,7 +353,10 @@ private fun ProfileContent(
 
         Spacer(Modifier.height(24.dp))
 
-        Button(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Cerrar sesión")
         }
     }
@@ -331,7 +408,25 @@ private fun createImageUri(context: Context): Uri? {
     }
 }
 
-private fun formatDate(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+/**
+ * La API envía createdAt como String ISO (ej: 2025-12-01T10:15:30.000Z),
+ * así que lo formateamos a dd/MM/yyyy. Si falla, devolvemos el string tal cual.
+ */
+private fun formatDate(createdAt: String?): String {
+    if (createdAt.isNullOrBlank()) return "-"
+
+    return try {
+        val parser = SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            Locale.getDefault()
+        ).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        val date = parser.parse(createdAt)
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        if (date != null) formatter.format(date) else createdAt
+    } catch (_: Exception) {
+        createdAt
+    }
 }

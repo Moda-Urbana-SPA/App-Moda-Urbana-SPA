@@ -1,7 +1,11 @@
 package com.example.modaurbanaprototipoapp.data.remote
 
-import com.example.modaurbanaprototipoapp.data.remote.dto.*
-import retrofit2.Response
+import com.example.modaurbanaprototipoapp.data.remote.dto.LoginRequest
+import com.example.modaurbanaprototipoapp.data.remote.dto.LoginResponse
+import com.example.modaurbanaprototipoapp.data.remote.dto.SignupRequest
+import com.example.modaurbanaprototipoapp.data.remote.dto.SignupResponse
+import com.example.modaurbanaprototipoapp.data.remote.dto.ProfileResponse
+import com.example.modaurbanaprototipoapp.data.remote.dto.ProductosResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -11,12 +15,12 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
-    @GET("auth/me")
-    suspend fun getCurrentUser(): UserDto
+    @GET("auth/profile")
+    suspend fun getCurrentUser(): ProfileResponse
 
-    @POST("auth/signup/basic")
-    suspend fun signupBasic(@Body request: SignupRequest): Response<SignupResponse>
+    @POST("auth/register")
+    suspend fun register(@Body request: SignupRequest): SignupResponse
 
-    @POST("auth/signup")
-    suspend fun signupSimple(@Body request: SignupRequest): Response<SignupResponse>
+    @GET("producto")
+    suspend fun getProductos(): ProductosResponse
 }

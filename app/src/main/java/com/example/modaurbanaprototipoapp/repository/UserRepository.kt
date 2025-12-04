@@ -3,7 +3,11 @@ package com.example.modaurbanaprototipoapp.repository
 import android.content.Context
 import com.example.modaurbanaprototipoapp.data.remote.ApiService
 import com.example.modaurbanaprototipoapp.data.remote.RetrofitClient
-import com.example.modaurbanaprototipoapp.data.remote.dto.*
+import com.example.modaurbanaprototipoapp.data.remote.dto.LoginRequest
+import com.example.modaurbanaprototipoapp.data.remote.dto.LoginResponse
+import com.example.modaurbanaprototipoapp.data.remote.dto.SignupRequest
+import com.example.modaurbanaprototipoapp.data.remote.dto.SignupResponse
+import com.example.modaurbanaprototipoapp.data.remote.dto.UserDto
 
 class UserRepository(context: Context) {
 
@@ -11,46 +15,49 @@ class UserRepository(context: Context) {
         .create(context)
         .create(ApiService::class.java)
 
+    // LOGIN
     suspend fun login(email: String, password: String): Result<LoginResponse> {
         return try {
             val request = LoginRequest(email = email, password = password)
             val response = apiService.login(request)
-            Result.success(response)
+
+            if (response.success) {
+                Result.success(response)
+            } else {
+                Result.failure(Exception(response.message ?: "Error al iniciar sesión"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    // REGISTRO
     suspend fun signup(email: String, password: String, name: String): Result<SignupResponse> {
         return try {
-            val request = SignupRequest(email = email, password = password, name = name)
+            val request = SignupRequest(
+                email = email,
+                password = password,
+                nombre = name,
+                role = "CLIENTE"
+            )
 
-            val respBasic = apiService.signupBasic(request)
-            if (respBasic.isSuccessful) {
-                return Result.success(respBasic.body()!!)
-            }
+            val response = apiService.register(request)
 
-            if (respBasic.code() == 404) {
-                val respSimple = apiService.signupSimple(request)
-                if (respSimple.isSuccessful) {
-                    return Result.success(respSimple.body()!!)
-                } else {
-                    val msg = respSimple.errorBody()?.string()?.take(300) ?: "HTTP ${respSimple.code()}"
-                    return Result.failure(Exception(msg))
-                }
+            if (response.success) {
+                Result.success(response)
             } else {
-                val msg = respBasic.errorBody()?.string()?.take(300) ?: "HTTP ${respBasic.code()}"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(response.message ?: "Error al registrar usuario"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    // OBTENER USUARIO ACTUAL
     suspend fun getCurrentUser(): Result<UserDto> {
         return try {
-            val user = apiService.getCurrentUser()
-            Result.success(user)
+            val response = apiService.getCurrentUser()
+            Result.success(response.data)
         } catch (e: Exception) {
             Result.failure(e)
         }

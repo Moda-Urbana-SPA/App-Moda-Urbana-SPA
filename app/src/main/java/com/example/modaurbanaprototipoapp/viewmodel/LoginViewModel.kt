@@ -78,36 +78,41 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
                 val result = repository.login(email, password)
 
-                result.fold(
-                    onSuccess = { response ->
-                        // Guardar token y email
-                        sessionManager.saveAuthToken(response.authToken)
-                        sessionManager.saveDummyUserSession(
-                            username = response.email ?: email,
-                            token = response.authToken
-                        )
+                if (result.isSuccess) {
+                    val response = result.getOrThrow()
 
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            isLoginSuccessful = true,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = when {
-                                exception.message?.contains("401") == true ->
-                                    "Email o contraseña incorrectos"
-                                exception.message?.contains("Unable to resolve host") == true ->
-                                    "Sin conexión a internet"
-                                else ->
-                                    exception.localizedMessage ?: "Error al iniciar sesión"
-                            }
-                        )
-                    }
-                )
+                    val token = response.data.accessToken
+                    val emailFromApi = response.data.user.email
 
+                    // Guardar sesión
+                    sessionManager.saveAuthToken(token)
+                    sessionManager.saveDummyUserSession(
+                        username = emailFromApi,
+                        token = token
+                    )
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoginSuccessful = true,
+                        error = null
+                    )
+                } else {
+                    val exception = result.exceptionOrNull()
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = when {
+                            exception?.message?.contains("401") == true ->
+                                "Email o contraseña incorrectos"
+                            exception?.message?.contains("Sesión expirada") == true ->
+                                "Sesión expirada. Por favor inicia sesión nuevamente"
+                            exception?.message?.contains("Unable to resolve host") == true ->
+                                "Sin conexión a internet"
+                            else ->
+                                exception?.localizedMessage ?: "Error al iniciar sesión"
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

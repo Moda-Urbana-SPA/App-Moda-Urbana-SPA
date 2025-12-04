@@ -75,7 +75,7 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
             _uiState.value = s.copy(nameError = "Mínimo 3 caracteres"); isValid = false
         }
 
-        // Contraseña (mínimo 8 y al menos 1 letra)
+        // Contraseña
         val hasMinLen = s.password.length >= 8
         val hasLetter = s.password.any { it.isLetter() }
 
@@ -84,11 +84,13 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         } else if (!hasMinLen) {
             _uiState.value = s.copy(passwordError = "Mínimo 8 caracteres"); isValid = false
         } else if (!hasLetter) {
-            _uiState.value = s.copy(passwordError = "Debe incluir al menos 1 letra"); isValid = false
+            _uiState.value = s.copy(passwordError = "Debe contener al menos una letra"); isValid = false
         }
 
         // Confirmación
-        if (s.confirmPassword != s.password) {
+        if (s.confirmPassword.isBlank()) {
+            _uiState.value = s.copy(confirmPasswordError = "Debes confirmar la contraseña"); isValid = false
+        } else if (s.confirmPassword != s.password) {
             _uiState.value = s.copy(confirmPasswordError = "Las contraseñas no coinciden"); isValid = false
         }
 
@@ -113,30 +115,28 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
 
                 val result = repository.signup(email, password, name)
 
-                result.fold(
-                    onSuccess = { response ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            isRegistrationSuccessful = true,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = when {
-                                exception.message?.contains("409") == true ||
-                                        exception.message?.contains("already exists") == true ->
-                                    "Este email ya está registrado"
-                                exception.message?.contains("Unable to resolve host") == true ->
-                                    "Sin conexión a internet"
-                                else ->
-                                    exception.localizedMessage ?: "Error al registrar usuario"
-                            }
-                        )
-                    }
-                )
+                if (result.isSuccess) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isRegistrationSuccessful = true,
+                        error = null
+                    )
+                } else {
+                    val exception = result.exceptionOrNull()
 
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = when {
+                            exception?.message?.contains("409") == true ||
+                                    exception?.message?.contains("already exists") == true ->
+                                "Este email ya está registrado"
+                            exception?.message?.contains("Unable to resolve host") == true ->
+                                "Sin conexión a internet"
+                            else ->
+                                exception?.localizedMessage ?: "Error al registrar usuario"
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
