@@ -1,134 +1,98 @@
 package com.example.modaurbanaprototipoapp.ui.screens
 
 import android.Manifest
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.modaurbanaprototipoapp.data.remote.dto.UserDto
+import com.example.modaurbanaprototipoapp.repository.AvatarRepository
+import com.example.modaurbanaprototipoapp.repository.UserRepository
+import com.example.modaurbanaprototipoapp.ui.component.ImagePickerDialog
 import com.example.modaurbanaprototipoapp.viewmodel.ProfileViewModel
-import com.example.modaurbanaprototipoapp.viewmodel.ProfileUiState
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun ProfileScreen(
     userId: Int,
     onNavigateBack: () -> Unit,
-    onLogout: () -> Unit,
-    viewModel: ProfileViewModel = viewModel()
+    onLogout: () -> Unit
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val appContext = context.applicationContext as Application
 
-    LaunchedEffect(userId) {
-        viewModel.loadCurrentUserProfile()
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Moda Urbana SPA") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
+    // ViewModel con repositorios
+    val viewModel: ProfileViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+                    val userRepository = UserRepository(appContext)
+                    val avatarRepository = AvatarRepository(appContext)
+                    @Suppress("UNCHECKED_CAST")
+                    return ProfileViewModel(userRepository, avatarRepository) as T
                 }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                state.isLoading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-
-                state.error != null -> {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Error",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            state.error ?: "",
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadCurrentUserProfile() }) {
-                            Text("Reintentar")
-                        }
-                    }
-                }
-
-                state.user != null -> {
-                    ProfileContent(
-                        state = state,
-                        onLogout = onLogout,
-                        viewModel = viewModel
-                    )
-                }
+                throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
             }
         }
-    }
-}
+    )
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun ProfileContent(
-    state: ProfileUiState,
-    onLogout: () -> Unit,
-    viewModel: ProfileViewModel
-) {
-    val user = state.user ?: return
-    val context = LocalContext.current
+    val state by viewModel.uiState.collectAsState()
+
+    // ------- LÓGICA DE CÁMARA / GALERÍA ---------
     var showImagePicker by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-
-    // Nombre “bonito” derivado del email (porque UserDto no tiene name)
-    val displayName = remember(user.email) {
-        user.email.substringBefore("@").ifBlank { "Usuario" }
-    }
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(
@@ -175,7 +139,6 @@ private fun ProfileContent(
             },
             onGalleryClick = {
                 showImagePicker = false
-
                 val imagePermission =
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         Manifest.permission.READ_MEDIA_IMAGES
@@ -193,204 +156,278 @@ private fun ProfileContent(
             }
         )
     }
+    // --------------------------------------------
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    LaunchedEffect(userId) {
+        viewModel.loadCurrentUserProfile()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Moda Urbana SPA",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
+                )
+            )
+        }
+    ) { innerPadding ->
         Box(
-            modifier = Modifier.size(120.dp),
-            contentAlignment = Alignment.BottomEnd
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
         ) {
             when {
-                // 1) Avatar guardado localmente (uri)
-                state.avatarUri != null -> {
-                    AsyncImage(
-                        model = state.avatarUri,
-                        contentDescription = "Avatar del usuario",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .clickable { showImagePicker = true },
-                        contentScale = ContentScale.Crop
+                state.isLoading -> {
+                    CircularProgressIndicator()
+                }
+
+                state.error != null -> {
+                    Text(
+                        text = state.error ?: "Error inesperado",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(24.dp)
                     )
                 }
 
-                // 2) Avatar remoto desde la API (UserDto.avatar)
-                !user.avatar.isNullOrEmpty() -> {
-                    AsyncImage(
-                        model = user.avatar,
-                        contentDescription = "Avatar de $displayName",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .clickable { showImagePicker = true },
-                        contentScale = ContentScale.Crop
+                state.user != null -> {
+                    ProfileContent(
+                        user = state.user!!,
+                        avatarUri = state.avatarUri,
+                        onChangeAvatar = { showImagePicker = true },
+                        onLogout = onLogout
                     )
-                }
-
-                // 3) Placeholder
-                else -> {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { showImagePicker = true },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Seleccionar avatar",
-                            modifier = Modifier.padding(32.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
                 }
             }
-
-            Surface(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clickable { showImagePicker = true },
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 2.dp
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CameraAlt,
-                    contentDescription = "Cambiar foto",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = displayName,
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = user.email,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Card(Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Email,
-                        contentDescription = "Email",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            "Correo Electrónico",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(user.email, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-
-                HorizontalDivider()
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "ID",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            "ID de Usuario",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(user.id, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-
-                if (!user.createdAt.isNullOrBlank()) {
-                    HorizontalDivider()
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Registro",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                "Miembro desde",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                formatDate(user.createdAt),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Button(
-            onClick = onLogout,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Cerrar sesión")
         }
     }
 }
 
 @Composable
-private fun ImagePickerDialog(
-    onDismiss: () -> Unit,
-    onCameraClick: () -> Unit,
-    onGalleryClick: () -> Unit
+private fun ProfileContent(
+    user: UserDto,
+    avatarUri: Uri?,
+    onChangeAvatar: () -> Unit,
+    onLogout: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Seleccionar foto") },
-        text = { Text("Elige una opción para cambiar tu foto de perfil") },
-        confirmButton = {
-            TextButton(onClick = onCameraClick) {
-                Text("Cámara")
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onGalleryClick) {
-                    Text("Galería")
+    // Datos base
+    val email = user.email
+    // Nombre bonito: texto antes de la @
+    val displayName = email.substringBefore("@").ifBlank { "Usuario" }
+
+    // Miembro desde → formatear YYYY-MM-DD a DD/MM/YYYY
+    val memberSince = user.createdAt?.let { iso ->
+        if (iso.length >= 10) {
+            val parts = iso.substring(0, 10).split("-")
+            if (parts.size == 3) "${parts[2]}/${parts[1]}/${parts[0]}" else iso
+        } else iso
+    } ?: ""
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Avatar + botón de cámara
+        Box(
+            contentAlignment = Alignment.BottomEnd,
+            modifier = Modifier.size(120.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF1F0F4)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (avatarUri != null) {
+                    AsyncImage(
+                        model = avatarUri,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (!user.avatar.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = user.avatar,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.size(56.dp),
+                        tint = Color(0xFF9E9E9E)
+                    )
                 }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = onChangeAvatar) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Cambiar foto",
+                        tint = Color(0xFF424242)
+                    )
                 }
             }
         }
-    )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // NOMBRE GRANDE
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        // EMAIL DEBAJO
+        Text(
+            text = email,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // TARJETA LILA
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFF3EDF7)
+            )
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+
+                // Correo
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "Correo",
+                        tint = Color(0xFF5E548E)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Correo Electrónico",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = email,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Divider(color = Color(0xFFE0E0E0))
+
+                // ID de usuario
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "ID Usuario",
+                        tint = Color(0xFF5E548E)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "ID de Usuario",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = user.id,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Divider(color = Color(0xFFE0E0E0))
+
+                // Miembro desde
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "Miembro desde",
+                        tint = Color(0xFF5E548E)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Miembro desde",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = memberSince,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // BOTÓN CERRAR SESIÓN
+        Button(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black,
+                contentColor = Color.White
+            )
+        ) {
+            Text(text = "Cerrar sesión")
+        }
+    }
 }
 
+/** Crea una Uri temporal para la foto de la cámara */
 private fun createImageUri(context: Context): Uri? {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFileName = "profile_avatar_$timeStamp.jpg"
@@ -398,35 +435,12 @@ private fun createImageUri(context: Context): Uri? {
 
     return try {
         val imageFile = File(storageDir, imageFileName)
-        FileProvider.getUriForFile(
+        androidx.core.content.FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
             imageFile
         )
     } catch (e: Exception) {
         null
-    }
-}
-
-/**
- * La API envía createdAt como String ISO (ej: 2025-12-01T10:15:30.000Z),
- * así que lo formateamos a dd/MM/yyyy. Si falla, devolvemos el string tal cual.
- */
-private fun formatDate(createdAt: String?): String {
-    if (createdAt.isNullOrBlank()) return "-"
-
-    return try {
-        val parser = SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            Locale.getDefault()
-        ).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-
-        val date = parser.parse(createdAt)
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        if (date != null) formatter.format(date) else createdAt
-    } catch (_: Exception) {
-        createdAt
     }
 }

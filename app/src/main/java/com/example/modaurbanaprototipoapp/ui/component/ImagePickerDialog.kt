@@ -1,4 +1,4 @@
-package com.example.modaurbanaprototipoapp.ui.components
+package com.example.modaurbanaprototipoapp.ui.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

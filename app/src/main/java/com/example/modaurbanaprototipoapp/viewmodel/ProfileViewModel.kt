@@ -1,15 +1,13 @@
 package com.example.modaurbanaprototipoapp.viewmodel
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.modaurbanaprototipoapp.data.remote.dto.UserDto
 import com.example.modaurbanaprototipoapp.repository.AvatarRepository
 import com.example.modaurbanaprototipoapp.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 data class ProfileUiState(
@@ -20,10 +18,10 @@ data class ProfileUiState(
     val avatarUri: Uri? = null
 )
 
-class ProfileViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val userRepository: UserRepository = UserRepository(application)
-    private val avatarRepository: AvatarRepository = AvatarRepository(application)
+class ProfileViewModel(
+    private val userRepository: UserRepository,
+    private val avatarRepository: AvatarRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
@@ -49,43 +47,29 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
                 if (result.isSuccess) {
                     val user = result.getOrThrow()
-
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        user = user,
-                        error = null
+                        user = user
                     )
                 } else {
-                    val exception = result.exceptionOrNull()
-
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = when {
-                            exception?.message?.contains("401") == true ->
-                                "Sesión expirada. Por favor inicia sesión nuevamente"
-                            exception?.message?.contains("Unable to resolve host") == true ->
-                                "Sin conexión a internet"
-                            else ->
-                                exception?.localizedMessage ?: "Error al cargar perfil"
-                        }
+                        error = result.exceptionOrNull()?.message ?: "Error al cargar perfil"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.localizedMessage ?: "Error al cargar perfil"
+                    error = e.message ?: "Error inesperado"
                 )
             }
         }
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
     fun updateAvatar(uri: Uri?) {
         viewModelScope.launch {
             avatarRepository.saveAvatarUri(uri)
+            _uiState.value = _uiState.value.copy(avatarUri = uri)
         }
     }
 

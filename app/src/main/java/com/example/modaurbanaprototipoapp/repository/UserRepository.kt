@@ -53,11 +53,18 @@ class UserRepository(context: Context) {
         }
     }
 
-    // OBTENER USUARIO ACTUAL
+    // PERFIL ACTUAL
     suspend fun getCurrentUser(): Result<UserDto> {
         return try {
             val response = apiService.getCurrentUser()
-            Result.success(response.data)
+
+            if (response.success) {
+                // 👇 AHORA TOMAMOS data.user, NO data DIRECTO
+                val user = response.data.user
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Error al obtener perfil de usuario"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
