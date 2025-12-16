@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // API de Xano
-    private const val BASE_URL = "https://modaurbana-api-hoo9.onrender.com/api/"
+    private const val BASE_URL = "https://modaurbana-api-x1ff.onrender.com/api/"
 
     fun create(context: Context): Retrofit {
 
